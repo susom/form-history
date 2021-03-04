@@ -1,9 +1,9 @@
 <?php
-namespace Stanford\RetrieveHistoryData;
+namespace Stanford\FormHistory;
 
 require_once "emLoggerTrait.php";
 
-class RetrieveHistoryData extends \ExternalModules\AbstractExternalModule {
+class FormHistory extends \ExternalModules\AbstractExternalModule {
 
     use emLoggerTrait;
 

@@ -1,6 +1,6 @@
 <?php
-namespace Stanford\RetrieveHistoryData;
-/** @var RetrieveHistoryData $this */
+namespace Stanford\FormHistory;
+/** @var FormHistory $this */
 
 trait emLoggerTrait
 {

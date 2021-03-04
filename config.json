@@ -1,7 +1,7 @@
 {
-	"name": "RetrieveHistoryData",
+	"name": "FormHistory",
 
-	"namespace": "Stanford\\RetrieveHistoryData",
+	"namespace": "Stanford\\FormHistory",
 
 	"description": "EM to retrieve REDCap history data for an instrument and create a downloadable csv file.",
 
@@ -23,11 +23,11 @@
 	"links": {
 		"project": [
             {
-                "name": "Retrieve History Data: Instrument Selector",
+                "name": "Form History: Instrument Selector",
                 "icon": "gear",
                 "url": "pages/instrumentSelector.php"
             }
-		],
+        ],
 		"control-center": [
 
 		]

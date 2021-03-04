@@ -1,169 +1,89 @@
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <!-- Required meta tags -->
-    <title>Retrieve History Data</title>
-    <meta charset="utf-8">
+    <head>
+        <!-- Required meta tags -->
+        <title>Form History Data</title>
+        <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=yes">
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous"/>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css"/>
 
-            <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
-            <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
-</head>
-<body>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.7.14/css/bootstrap-datetimepicker.min.css">
+        <link rel="stylesheet" href="<?php echo $stylesheet; ?>">
 
-<h1>Retrieve History Data Setup</h1>
-<div>
-    <h4>This is the Setup Page to select which instrument that history data will be pulled from and put into a csv file.</h4>
-</div>
-<br>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.15.1/moment.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.7.14/js/bootstrap-datetimepicker.min.js"></script>
+    </head>
+    <body>
 
-    <div class="container">
-
-        <div>
-            <label><b>Select the form that you want to retrieve history data:</b></label>
-        </div>
-        <select name="forms" id="forms" onchange="getSelectedForm()">
-            <?php echo $forms; ?>
-        </select>
-
-        <br><br>
-
-        <div id="event_list_id" hidden>
-            <div id="event_id">
-                <label><b>There is more than one arm in this project, please select the arm you want to pull data from:</b></label>
+        <div class="container">
+            <div class="row pl-1">
+                <h3>
+                    Form History Setup Page
+                </h3>
             </div>
-            <select name="events" id="events">
-            </select>
-        </div>
 
-        <br><br>
+            <form method="post" action="">
 
-        <div id="record_list_id" hidden>
-            <div id="record_id">
-                <label><b>Select the records in the project to retrieve history data:</b></label>
-            </div>
-            <div name="records" id="records">
-            </div>
-        </div>
+                <!-- Display list of forms in events -->
+                <div class="row p-1">
+                    <?php echo $forms; ?>
+                </div>
 
-        <br><br>
+                <!-- Select dropdown with search so user can select a record -->
+                <div class="row" id="record_label">
+                    <div>Enter or select the record you want to pull data for:</div>
+                </div>
+                <input list="record_list" name="record">
+                <datalist id="record_list">
+                    <?php echo $records; ?>
+                </datalist>
 
-        <button type="submit" id="submit" hidden>Retrieve Data</button>
+                <!-- Form submit button -->
+                <div class="row p-1 pb-5">
+                    <input class="btn-primary mt-5" type="submit" value="Retrieve data and save to file">
+                </div>
 
-    </div>  <!-- END CONTAINER -->
-</body>
+            </form>
+
+        </div>  <!-- END CONTAINER -->
+
+    </body>
 </html>
 
 <script>
-    document.getElementById("forms").onchange = function() {getSelectedForm()};
-    document.getElementById("submit").onclick = function() {retrieveData()};
 
-    function getSelectedForm() {
+    $( document ).ready(function() {
 
-    var selected_form = document.getElementById("forms").value;
-    edt.getEventList(selected_form);
-}
+        // The checkboxes created from REDCap do not have a value set so no value comes through the form submit
+        // create a value attribute to be the same as the id.
+        var all_ckbx = $('#choose_select_forms_events_div_sub input[id^="ef-"]');
+        $.each(all_ckbx, function (key, val) {
+            var value = $(val).attr('id');
+            $(val).attr("value", value);
+            $(val).attr("name", "form_event[]")
 
-    function retrieveData() {
+        });
 
-    var selected_form = document.getElementById("forms").value;
-    var selected_event = document.getElementById("events").value;
-    edt.retrieveData(selected_form, selected_event);
-}
-
-
-    var edt = edt || {};
-
-    edt.getEventList = function (selected_form) {
-
-    // Make the API call to see if there are multiple arms in this project
-    $.ajax({
-        type: "POST",
-        datatype: "html",
-        async: false,
-        data: {
-            "action"     : "events",
-            "form"       : selected_form
-        },
-        success:function(html) {
-        },
-        error:function(jqXhr, textStatus, errorThrown) {
-            console.log("Error in get_arms request: ", jqXHR, textStatus, errorThrown);
-        }
-
-    }).done(function (html) {
-        alert("Return from find events: " + html);
-        if (html === null) {
-            document.getElementById("event_list_id").style.display = "inline";
-            document.getElementById("events").innerHTML = html;
-        } else {
-            edt.getRecords(selected_form, null);
-        }
-    }).fail(function (jqXHR, textStatus, errorThrown) {
-        console.log("Failed to retrieve list of arms in getArmsList");
+        $("#select_links_forms button").remove();
+        $("#select_links_forms a").first().css("margin-left", "5px");
+        var title = $("#choose_select_forms_events_div_sub div").first();
+        title.css("font-size", "15px");
+        title.html("Select instruments/events to retrieve history data for:");
     });
 
-};
+    function selectAllInEvent(event_name,ob) {
+        $('#choose_select_forms_events_div_sub input[id^="ef-'+event_name+'-"]').prop('checked',$(ob).prop('checked'));
+    }
 
-    edt.getRecords = function (selected_form, selected_event) {
-
-    // Make the API call to see if there are multiple arms in this project
-    $.ajax({
-        type: "POST",
-        datatype: "html",
-        async: false,
-        data: {
-            "action"     : "records",
-            "form"       : selected_form,
-            "event"      : selected_event
-        },
-        success:function(html) {
-        },
-        error:function(jqXhr, textStatus, errorThrown) {
-            console.log("Error in get_arms request: ", jqXHR, textStatus, errorThrown);
-        }
-
-    }).done(function (html) {
-        if (html === null) {
-            document.getElementById("record_list_id").style.display = "inline";
-            document.getElementById("records").innerHTML = html;
-        }
-
-        document.getElementById("submit").style.display = "inline";
-    }).fail(function (jqXHR, textStatus, errorThrown) {
-        console.log("Failed to retrieve list of arms in getArmsList");
-    });
-
-};
-
-    edt.retrieveData = function (selected_form, selected_event, records) {
-
-    // Make the API call to retrieve the list of record_ids in this project
-    $.ajax({
-        type: "POST",
-        datatype: "html",
-        async: false,
-        data: {
-            "action"     : "records",
-            "form"       : selected_form,
-            "event"      : selected_event,
-            "records"    : records
-        },
-        success:function(html) {
-        },
-        error:function(jqXhr, textStatus, errorThrown) {
-            console.log("Error in get_arms request: ", jqXHR, textStatus, errorThrown);
-        }
-
-    }).done(function (html) {
-
-    }).fail(function (jqXHR, textStatus, errorThrown) {
-        console.log("Failed to retrieve list of arms in getArmsList");
-    });
-
-};
-
+    function selectAllFormsEvents(select_all) {
+        $('#choose_select_forms_events_div_sub input[type="checkbox"]').prop('checked',select_all);
+    }
 
 </script>

@@ -1,0 +1,28 @@
+
+h3 {
+    color: grey;
+}
+
+div.wrap.hangevl {
+    margin-left: 20px;
+}
+
+#record_label {
+    color: maroon;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+button.hidden {
+    display: none;
+}
+
+table {
+    margin-top: 10px;
+}
+
+div.a {
+    text-align: left;
+}
