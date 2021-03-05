@@ -17,6 +17,8 @@ $module->emDebug("selected forms/events: " . json_encode($selected_form_event) .
 
 $selected_form = '';
 $selected_event = '';
+$primary_key = REDCap::getRecordIdField();
+
 if (!empty($selected_form_event) && !empty($selected_record)) {
 
     // Find the log table where the history data is stored
@@ -30,13 +32,20 @@ if (!empty($selected_form_event) && !empty($selected_record)) {
         // Split out the form and event
         list($selected_event_name, $selected_form) = splitFormEvent($one_form_event);
 
-        // Find which fields are on this form
+        // Find which fields are on this form. If the primary key is on this form, delete it because
+        // we automatically add it.
         $fields_on_form = $Proj->forms[$selected_form]['fields'];
-        $selected_field_names = array_keys($fields_on_form);
+        $all_but_pk = array_diff(array_keys($fields_on_form), array($primary_key));
+        $selected_field_names = array_values($all_but_pk);
 
         // Find the event id from the event name
-        $event_names = REDCap::getEventNames(true, true);
-        $selected_event = array_search($selected_event_name, $event_names);
+        if (!empty($selected_event_name)) {
+            $event_names = REDCap::getEventNames(true, true);
+            $selected_event = array_search($selected_event_name, $event_names);
+        } else {
+            $selected_event = $Proj->firstEventId;
+        }
+
 
         // Retrieve data from the log table
         list($history_entries, $all_updated_field_names) =
@@ -60,7 +69,8 @@ if (!empty($selected_form_event) && !empty($selected_record)) {
     // Should this be a config parameter?
     $binned_results = binResultsOnTS($running_total_data);
 
-    $req_header_fields = array("ts data saved", REDCap::getRecordIdField(), "redcap_event_name");
+    $req_header_fields = array("ts data saved", $primary_key, "redcap_event_name");
+
     $all_unique_fields = array_unique($running_total_fields);
 
     $status = reformatDataToCSVAndDownload($binned_results, $req_header_fields, $all_unique_fields);
@@ -74,15 +84,17 @@ if (!empty($selected_form_event) && !empty($selected_record)) {
 $forms = getFormEventList();
 
 // Create a drop down for the records
-$record_list = retrieveRecordList();
+$record_list = retrieveRecordList($primary_key);
 $records = generateHTMLRecordList($record_list);
 
 function splitFormEvent($selected_form_event) {
 
-    global $module;
+    global $module, $Proj;
 
-    // The format is 'ef-' . event name . '-' . form name
+    // The format is 'ef-' . event name . '-' . form name for longitudinal projects
+    // The format is 'ef--' . form name for class projects
     $pieces = explode("-", $selected_form_event);
+
     return array($pieces[1], $pieces[2]);
 
 }
@@ -205,11 +217,13 @@ function findHistoryData($pid, $selected_event, $selected_event_name, $selected_
 
         // This entry may have many fields that were updated at the same time, so parse the entries into an array
         list($updated_data, $updated_field_names) = parseUpdatesIntoArray($history_results['data_values'], $selected_field_names);
+        //$module->emDebug("Return values: " . json_encode($updated_data));
+
 
         // If there are fields that were updated, save fields and values.  Our array looks like
         //  timestamp data saved, record_id, event name => array(updated field 1, updated field 2, etc.)
         if (!empty($updated_data)) {
-            $history_data[$history_results['ts']][$history_results['pk']][$selected_event_name] = $updated_data;
+             $history_data[$history_results['ts']][$history_results['pk']][$selected_event_name] = $updated_data;
         }
 
         // Keep track of all fields that were updated
@@ -287,13 +301,12 @@ function findLogTable($proj_id) {
     return $log_table_name;
 }
 
-function retrieveRecordList() {
+function retrieveRecordList($primary_key) {
 
     global $module, $Proj;
 
-    $pk = REDCap::getRecordIdField();
     $first_event_id = $Proj->firstEventId;
-    $json_records = REDCap::getData('json', null, $pk, $first_event_id);
+    $json_records = REDCap::getData('json', null, $primary_key, $first_event_id);
     $record_array = json_decode($json_records, true);
 
     $records = array();
