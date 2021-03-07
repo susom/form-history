@@ -69,13 +69,13 @@ if (!empty($selected_form_event) && !empty($selected_record)) {
     // Should this be a config parameter?
     $binned_results = binResultsOnTS($running_total_data);
 
-    $req_header_fields = array("ts data saved", $primary_key, "redcap_event_name");
+    $req_header_fields = array("updated by", "ts data saved", $primary_key, "redcap_event_name");
 
     $all_unique_fields = array_unique($running_total_fields);
 
     $status = reformatDataToCSVAndDownload($binned_results, $req_header_fields, $all_unique_fields);
 
-    return;
+    //return;
 
 }
 
@@ -129,9 +129,10 @@ function reformatDataToCSVAndDownload($binned_results, $req_header_fields, $all_
                 if (is_null($last_save[$record_id][$event_name])) {
 
                     // These are the 3 required header fields that each row is required to have
-                    $one_row = array("ts" => $timestamp_reformatted, "rid" => $record_id, "eid" => $event_name);
+                    $one_row = array("user" => $fields['USER'], "ts" => $timestamp_reformatted, "rid" => $record_id, "eid" => $event_name);
                 } else {
                     $one_row = $last_save[$record_id][$event_name];
+                    $one_row['user'] = $fields['USER'];
                     $one_row["ts"] = $timestamp_reformatted;
                     $one_row["eid"] = $event_name;
                 }
@@ -170,6 +171,7 @@ function downloadCSVFile($data)
 {
     global $module;
 
+
     // Open the stream to the file
     header('Content-Description: File Transfer');
     header('Content-Type: text/csv');
@@ -203,7 +205,7 @@ function findHistoryData($pid, $selected_event, $selected_event_name, $selected_
 
     global $module;
 
-    $sql = "select pk, ts, data_values from " . $log_table_name .
+    $sql = "select pk, ts, user, data_values from " . $log_table_name .
         " where project_id = " . $pid .
         " and event_id = " . $selected_event .
         " and pk in (" . $selected_records . ")" .
@@ -223,6 +225,7 @@ function findHistoryData($pid, $selected_event, $selected_event_name, $selected_
         // If there are fields that were updated, save fields and values.  Our array looks like
         //  timestamp data saved, record_id, event name => array(updated field 1, updated field 2, etc.)
         if (!empty($updated_data)) {
+             $updated_data['USER'] = $history_results['user'];
              $history_data[$history_results['ts']][$history_results['pk']][$selected_event_name] = $updated_data;
         }
 
