@@ -37,13 +37,27 @@
                 </div>
 
                 <!-- Select dropdown with search so user can select a record -->
-                <div class="row" id="record_label">
+                <div class="row newsection">
                     <div>Enter or select the record you want to pull data for:</div>
                 </div>
                 <input list="record_list" name="record">
                 <datalist id="record_list">
                     <?php echo $records; ?>
                 </datalist>
+
+                <!-- Select csv or xml file -->
+                <div class="row newsection">
+                    <div>Select the file type you would like downloaded</div>
+                </div>
+                <div>
+                    <input type="radio" name="file_type" value="csv" checked="checked">
+                    <label>.csv file type</label>
+                </div>
+                <div>
+                    <input type="radio" name="file_type" value="xml">
+                    <label>.xml file type</label>
+                </div>
+
 
                 <!-- Form submit button -->
                 <div class="row p-1 pb-5">

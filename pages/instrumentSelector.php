@@ -2,18 +2,23 @@
 namespace Stanford\FormHistory;
 /** @var \Stanford\FormHistory\FormHistory $module */
 
+require_once $module->getModulePath() . "classes/CsvFiles.php";
+require_once $module->getModulePath() . "classes/XmlFiles.php";
+
 use \REDCap;
 use \DateTime;
 
 $pid = isset($_GET['pid']) && !empty($_GET['pid']) ? $_GET['pid'] : null;
 $selected_form_event = isset($_POST['form_event']) && !empty($_POST['form_event']) ? $_POST['form_event'] : null;
 $selected_record = isset($_POST['record']) && !empty($_POST['record']) ? $_POST['record'] : null;
+$file_type = isset($_POST['file_type']) && !empty($_POST['file_type']) ? $_POST['file_type'] : null;
 
 global $Proj;
 $stylesheet = $module->getUrl('pages/selector.css');
 
 $module->emDebug("**** New request ****");
 $module->emDebug("selected forms/events: " . json_encode($selected_form_event) . ", selected record: " . $selected_record);
+$module->emDebug("File type: " . $file_type);
 
 $selected_form = '';
 $selected_event = '';
@@ -46,7 +51,6 @@ if (!empty($selected_form_event) && !empty($selected_record)) {
             $selected_event = $Proj->firstEventId;
         }
 
-
         // Retrieve data from the log table
         list($history_entries, $all_updated_field_names) =
             findHistoryData($pid, $selected_event, $selected_event_name, $selected_record,
@@ -63,22 +67,26 @@ if (!empty($selected_form_event) && !empty($selected_record)) {
         } else {
             $running_total_data += $history_entries;
         }
+
     }
 
     // Do we want to bin the results in a timeframe in case there are multi-page surveys, etc.
     // Should this be a config parameter?
     $binned_results = binResultsOnTS($running_total_data);
 
-    $req_header_fields = array("updated by", "ts data saved", $primary_key, "redcap_event_name");
-
     $all_unique_fields = array_unique($running_total_fields);
-
-    $status = reformatDataToCSVAndDownload($binned_results, $req_header_fields, $all_unique_fields);
-
-    //return;
+    $req_header_fields = array("updated by", "ts data saved", $primary_key, "redcap_event_name");
+    if ($file_type == 'xml') {
+        $xmlClass = new XmlFiles($binned_results, $req_header_fields, $all_unique_fields);
+        $xmlClass->reformatToXml();
+        $status = $xmlClass->downloadXmlFile();
+   } else {
+        $csvClass = new CsvFiles($binned_results, $req_header_fields, $all_unique_fields);
+        $csvClass->reformatToCsv();
+        $status = $csvClass->downloadCsvFile();
+    }
 
 }
-
 
 // Put together the form/event list
 $forms = getFormEventList();
@@ -86,6 +94,7 @@ $forms = getFormEventList();
 // Create a drop down for the records
 $record_list = retrieveRecordList($primary_key);
 $records = generateHTMLRecordList($record_list);
+
 
 function splitFormEvent($selected_form_event) {
 
@@ -99,98 +108,12 @@ function splitFormEvent($selected_form_event) {
 
 }
 
-function reformatDataToCSVAndDownload($binned_results, $req_header_fields, $all_updated_field_names) {
-
-    global $module;
-    $status = true;
-    $csv_format = array();
-
-    // First add the header in the first row
-    $header = array_merge($req_header_fields, $all_updated_field_names);
-    $csv_format[] = array_values($header);
-
-    // Extract timestamps and sort them so we go from older to newer
-    $all_update_timestamps = array_keys($binned_results);
-    sort($all_update_timestamps);
-
-    // Next add each updated row.  We need to put the data in the same order as the headers
-    // To make the file as close to uploadable as possible, we are putting data in the following order:
-    // 1) timestamp of update, 2) record_id, 3) redcap_event_name, 4) updated data ....
-    $last_save = array();
-    foreach($all_update_timestamps as $timestamp) {
-        foreach($binned_results[$timestamp] as $record_id => $record) {
-            foreach($record as $event_name => $fields) {
-
-                $timestamp_reformatted = reformat_timestamp($timestamp);
-                $one_row = array();
-
-                // If there was a previous save, start with that save and update the fields that have a save
-                // so that we have running list of what the form looked like at the time of save.
-                if (is_null($last_save[$record_id][$event_name])) {
-
-                    // These are the 3 required header fields that each row is required to have
-                    $one_row = array("user" => $fields['USER'], "ts" => $timestamp_reformatted, "rid" => $record_id, "eid" => $event_name);
-                } else {
-                    $one_row = $last_save[$record_id][$event_name];
-                    $one_row['user'] = $fields['USER'];
-                    $one_row["ts"] = $timestamp_reformatted;
-                    $one_row["eid"] = $event_name;
-                }
-
-                // now loop over update fields
-                foreach ($all_updated_field_names as $field) {
-                    if (!is_null($fields[$field])) {
-                        $one_row[$field] = $fields[$field];
-                    } else if (is_null($one_row[$field])) {
-                        $one_row[$field] = null;
-                    }
-                }
-
-                // Save this row
-                $csv_format[] = array_values($one_row);
-                $last_save[$record_id][$event_name] = $one_row;
-            }
-        }
-    }
-
-    //$module->emDebug("This is csv format: " . json_encode($csv_format));
-    $status = downloadCSVFile($csv_format);
-
-    return $status;
-}
-
 function reformat_timestamp($timestamp) {
 
     global $module;
     $d = new DateTime($timestamp);
     return $d->format('Y-m-d H:i:s');
 
-}
-
-function downloadCSVFile($data)
-{
-    global $module;
-
-
-    // Open the stream to the file
-    header('Content-Description: File Transfer');
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename=history_data.csv');
-
-    $fp = fopen('php://output', 'w');
-    if ($fp !== false) {
-
-        // Write out each row of the csv
-        foreach ($data as $row) {
-            fputcsv($fp, $row);
-        }
-    }
-
-    // Close the stream
-    fclose($fp);
-    ob_end_flush();
-
-    return true;
 }
 
 
@@ -278,9 +201,9 @@ function parseUpdatesIntoArray($db_updates, $field_names) {
             $upload_field = $field_name . '___' . $coded_value;
             if (trim($new_value[1]) == 'checked') {
                 $upload_value = 1;
-            } else {
+            } elseif (trim($new_value[1]) == 'unchecked') {
                 $upload_value = 0;
-            }
+           }
         }
 
         // If this field is on the form, save it as a possible value to re-save.
