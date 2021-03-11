@@ -29,7 +29,7 @@
                 </h3>
             </div>
 
-            <form method="post" action="">
+            <form method="post" action="" id="data-request">
 
                 <!-- Display list of forms in events -->
                 <div class="row p-1">
@@ -61,7 +61,7 @@
 
                 <!-- Form submit button -->
                 <div class="row p-1 pb-5">
-                    <input class="btn-primary mt-5" type="submit" value="Retrieve data and save to file">
+                    <input class="btn-primary mt-5" type="button" id='btnsubmit' onclick="submitForm()" value="Retrieve data and save to file">
                 </div>
 
             </form>
@@ -98,6 +98,12 @@
 
     function selectAllFormsEvents(select_all) {
         $('#choose_select_forms_events_div_sub input[type="checkbox"]').prop('checked',select_all);
+    }
+
+    function submitForm() {
+        var btn = $('#data-request');
+        btn.submit();
+        btn[0].reset();
     }
 
 </script>

@@ -86,6 +86,7 @@ if (!empty($selected_form_event) && !empty($selected_record)) {
         $status = $csvClass->downloadCsvFile();
     }
 
+    return;
 }
 
 // Put together the form/event list
