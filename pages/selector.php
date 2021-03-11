@@ -103,7 +103,7 @@
     function submitForm() {
         var btn = $('#data-request');
         btn.submit();
-        btn[0].reset();
+        //btn[0].reset();
     }
 
 </script>
