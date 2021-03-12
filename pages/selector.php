@@ -46,6 +46,7 @@
                 </datalist>
 
                 <!-- Select csv or xml file -->
+<!--
                 <div class="row newsection">
                     <div>Select the file type you would like downloaded</div>
                 </div>
@@ -57,7 +58,77 @@
                     <input type="radio" name="file_type" value="xml">
                     <label>.xml file type</label>
                 </div>
-
+-->
+                <div class="row">
+                    <table id="option-table">
+                        <tr>
+                            <th class="newsection">File type</th>
+                            <th class="newsection">Reorder fields to form</th>
+                            <th class="newsection">Fields to download</th>
+                            <th class="newsection"></th>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div>
+                                    <input type="radio" name="file_type" value="csv" checked="checked">
+                                    <label>.csv file type</label>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <input type="checkbox" name="order">
+                                    <label>Reorder fields</label>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <input type="radio" name="include-fields" value="updated-only" checked>
+                                    <label>Updated fields only</label>
+                                </div>
+                            </td>
+                            <td>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div>
+                                    <input type="radio" name="file_type" value="xml">
+                                    <label>.xml file type</label>
+                                </div>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                                <div>
+                                    <input type="radio" name="include-fields" value="all-fields">
+                                    <label>All fields on form</label>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <label>Comma seperated field list (field1, field2,...)</label>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                            </td>
+                            <td>
+                            </td>
+                            <td>
+                                <div>
+                                    <input type="radio" name="include-fields" value="filter-fields">
+                                    <label>Specified fields only  --></label>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    <input type="text" id="filter-fields" name="filter-fields">
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
 
                 <!-- Form submit button -->
                 <div class="row p-1 pb-5">
@@ -103,7 +174,7 @@
     function submitForm() {
         var btn = $('#data-request');
         btn.submit();
-        //btn[0].reset();
+        btn[0].reset();
     }
 
 </script>

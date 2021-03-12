@@ -15,6 +15,16 @@ div.wrap.hangevl {
     font-size: 15px;
 }
 
+#option-table {
+    margin-top: 20px;
+    width: 100%;
+    vertical-align: top;
+}
+
+#filter-fields {
+    width: 100%;
+}
+
 button.hidden {
     display: none;
 }
