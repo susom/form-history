@@ -272,7 +272,7 @@ function findHistoryData($pid, $selected_event, $selected_event_name, $selected_
     $sql = "select pk, ts, user, data_values from " . $log_table_name .
         " where project_id = " . $pid .
         " and event_id = " . $selected_event .
-        " and pk in (" . $selected_records . ")" .
+        " and pk in ('" . $selected_records . "')" .
         " and object_type = 'redcap_data' order by pk, event_id, ts";
 
     $merged_fields = array();
