@@ -337,8 +337,8 @@ function parseUpdatesIntoArray($db_updates, $field_names) {
             // into format xxx___1 and the value comes in as checked or unchecked and should be reformatted
             // to 0 and 1.
             $field_name = trim(substr($new_value[0],0, $npos));
-            $npos_end = strpos($new_value[0], ')');
-            $coded_value = substr($new_value[0], $npos+1, (strlen($new_value[0]) - $npos_end));
+            $npos_end = strpos($new_value[0], ')') - 1;
+            $coded_value = substr($new_value[0], $npos+1, ($npos_end-$npos));
             $upload_field = $field_name . '___' . $coded_value;
             if (trim($new_value[1]) == 'checked') {
                 $upload_value = 1;
