@@ -399,10 +399,12 @@ function generateHTMLRecordList($records) {
     $html = '';
 
     foreach ($records as $record) {
-        $html .= "<option value='$record'/>$record</option>";
+        $html .= "<option value='$record'/>" . htmlentities($record) . "</option>";
 
     }
     $html .= "<option value='--ALL--'/>--ALL--</option>";
+
+    $module->emDebug($records,$html);
 
     return $html;
 }
