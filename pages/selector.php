@@ -40,10 +40,9 @@
                 <div class="row newsection">
                     <div>Enter or select the record you want to pull data for:</div>
                 </div>
-                <input list="record_list" name="record">
-                <datalist id="record_list">
+                <select autocomplete id="record_list" name ="record">
                     <?php echo $records; ?>
-                </datalist>
+                </select>
 
                 <!-- Select csv or xml file -->
 <!--

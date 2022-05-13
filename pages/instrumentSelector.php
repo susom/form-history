@@ -25,7 +25,7 @@ $module->emDebug("File type: " . $file_type . ', order fields: ' . $order_fields
 $module->emDebug("Order fields: " . $order_fields);
 
 $selected_form = '';
-$selected_event = '';
+$selected_event_id = '';
 $primary_key = REDCap::getRecordIdField();
 
 if (!empty($selected_form_event) && !empty($selected_record)) {
@@ -34,66 +34,75 @@ if (!empty($selected_form_event) && !empty($selected_record)) {
     $log_table_name = findLogTable($pid);
 
     // Loop over each form/event
+    if ($selected_record === "--ALL--") {
+        $selected_records = retrieveRecordList($primary_key);
+    } else {
+        $selected_records = [$selected_record];
+    }
+
     $running_total_fields = array();
     $running_total_data = array();
-    foreach ($selected_form_event as $one_form_event) {
 
-        // Split out the form and event
-        list($selected_event_name, $selected_form) = splitFormEvent($one_form_event);
+    foreach ($selected_records as $selected_record) {
+        foreach ($selected_form_event as $one_form_event) {
 
-        // Find which fields are on this form. If the primary key is on this form, delete it because
-        // we automatically add it.
-        $fields_on_form = $Proj->forms[$selected_form]['fields'];
-        $all_but_pk = array_diff(array_keys($fields_on_form), array($primary_key));
-        $form_field_names = array_values($all_but_pk);
+            // Split out the form and event
+            list($selected_event_name, $selected_form) = splitFormEvent($one_form_event);
 
-        // Find the event id from the event name
-        if (!empty($selected_event_name)) {
-            $event_names = REDCap::getEventNames(true, true);
-            $selected_event = array_search($selected_event_name, $event_names);
-        } else {
-            $selected_event = $Proj->firstEventId;
-        }
+            // Find which fields are on this form. If the primary key is on this form, delete it because
+            // we automatically add it.
+            $fields_on_form = $Proj->forms[$selected_form]['fields'];
+            $all_but_pk = array_diff(array_keys($fields_on_form), array($primary_key));
+            $form_field_names = array_values($all_but_pk);
 
-        // Retrieve data from the log table
-        list($history_entries, $all_updated_field_names) =
-            findHistoryData($pid, $selected_event, $selected_event_name, $selected_record,
-                $form_field_names, $log_table_name);
+            // Find the event id from the event name
+            if (!empty($selected_event_name)) {
+                $event_names = REDCap::getEventNames(true, true);
+                $selected_event_id = array_search($selected_event_name, $event_names);
+            } else {
+                $selected_event_id = $Proj->firstEventId;
+            }
 
-        // See what fields should be included in the download file
-        if ($fields_to_include == 'updated-only') {
+            // Retrieve data from the log table
+            list($history_entries, $all_updated_field_names) =
+                findHistoryData($pid, $selected_event_id, $selected_event_name, $selected_record,
+                    $form_field_names, $log_table_name);
 
-            // No need to do anything - this is the list of updated fields
-            $all_fields = $all_updated_field_names;
+            // See what fields should be included in the download file
+            if ($fields_to_include == 'updated-only') {
 
-        } else if ($fields_to_include == 'filter-fields') {
+                // No need to do anything - this is the list of updated fields
+                $all_fields = $all_updated_field_names;
 
-            // Filter the list to just the fields specified
-            $fields_to_include = isset($_POST['filter-fields']) && !empty($_POST['filter-fields']) ? $_POST['filter-fields'] : null;
-            $all_fields = filterFieldsToSpecifiedList($fields_to_include);
+            } else if ($fields_to_include == 'filter-fields') {
 
-        } else if ($fields_to_include == 'all-fields') {
+                // Filter the list to just the fields specified
+                $fields_to_include = isset($_POST['filter-fields']) && !empty($_POST['filter-fields']) ? $_POST['filter-fields'] : null;
+                $all_fields = filterFieldsToSpecifiedList($fields_to_include);
 
-            // Include all the fields on the form even if they were never updated
-            $all_fields = includeAllFieldsOnForm($all_updated_field_names, $form_field_names);
+            } else if ($fields_to_include == 'all-fields') {
 
-        }
+                // Include all the fields on the form even if they were never updated
+                $all_fields = includeAllFieldsOnForm($all_updated_field_names, $form_field_names);
 
-        // If the user wants the fields to be rearranged to the order they occur in the form, rearrange them.
-        if (!empty($order_fields)) {
-            $all_fields = orderFieldsToForm($all_fields, $form_field_names);
-        }
+            }
 
-        // Merge the new data with the old
-        if (empty($running_total_fields)) {
-            $running_total_fields = $all_fields;
-        } else {
-            $running_total_fields = array_merge($running_total_fields, $all_fields);
-        }
-        if (empty($running_total_data)) {
-            $running_total_data = $history_entries;
-        } else {
-            $running_total_data += $history_entries;
+            // If the user wants the fields to be rearranged to the order they occur in the form, rearrange them.
+            if (!empty($order_fields)) {
+                $all_fields = orderFieldsToForm($all_fields, $form_field_names);
+            }
+
+            // Merge the new data with the old
+            if (empty($running_total_fields)) {
+                $running_total_fields = $all_fields;
+            } else {
+                $running_total_fields = array_merge($running_total_fields, $all_fields);
+            }
+            if (empty($running_total_data)) {
+                $running_total_data = $history_entries;
+            } else {
+                $running_total_data += $history_entries;
+            }
         }
     }
 
@@ -390,9 +399,10 @@ function generateHTMLRecordList($records) {
     $html = '';
 
     foreach ($records as $record) {
-        $html .= "<option value='$record'/>";
+        $html .= "<option value='$record'/>$record</option>";
 
     }
+    $html .= "<option value='--ALL--'/>--ALL--</option>";
 
     return $html;
 }
