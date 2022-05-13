@@ -387,7 +387,7 @@ function retrieveRecordList($primary_key) {
 
     $records = array();
     foreach($record_array as $key => $record_name) {
-        $records[] = $record_name['record_id'];
+        $records[] = $record_name[$primary_key];
     }
 
     return $records;
